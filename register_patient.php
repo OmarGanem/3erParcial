@@ -27,14 +27,14 @@
             display: block;
             margin-bottom: 5px;
         }
-        input[type=text], input[type=date] {
+        input[type=text], input[type=email], input[type=date] {
             width: 100%;
             padding: 10px;
             margin: 5px 0;
             border: 1px solid #ccc;
             border-radius: 5px;
         }
-        button {
+        button, .btn {
             background-color: #007bff; 
             color: white; 
             padding: 10px 20px; 
@@ -42,7 +42,7 @@
             border-radius: 5px; 
             cursor: pointer;
         }
-        button:hover {
+        button:hover, .btn:hover {
             background-color: #0056b3;
         }
     </style>
@@ -51,82 +51,61 @@
     <header>
         <h1>Register Patient</h1>
     </header>
-    <nav>
-        <a href="index.php">Home</a>
-        <a href="register_patient.php">Register Patient</a>
-        <a href="register_doctor.php">Register Doctor</a>
-        <a href="search.php">Search</a>
-    </nav>
     <div class="container">
+        <!-- Formulario para registrar a un paciente -->
         <form action="register_patient.php" method="post">
-            <div class="form-group">
-                <label for="patient-id">Patient Id:</label>
-                <input type="text" id="patient-id" name="patient_id">
-            </div>
             <div class="form-group">
                 <label for="patient-name">Patient Name:</label>
                 <input type="text" id="patient-name" name="patient_name" required>
             </div>
             <div class="form-group">
-                <label for="patient-dob">Date of Birth:</label>
-                <input type="date" id="patient-dob" name="patient_dob" required>
+                <label for="patient-last-name">Patient Last Name:</label>
+                <input type="text" id="patient-last-name" name="patient_last_name" required>
+            </div>
+            <div class="form-group">
+                <label for="patient-address">Patient Address:</label>
+                <input type="text" id="patient-address" name="patient_address" required>
             </div>
             <div class="form-group">
                 <label for="patient-phone">Phone Number:</label>
                 <input type="text" id="patient-phone" name="patient_phone" required>
             </div>
             <div class="form-group">
-                <label for="patient-symptoms">Symptoms:</label>
-                <input type="text" id="patient-symptoms" name="symptoms" required>
-            </div>
-            <div class="form-group">
-                <label for="assigned-doctor">Assigned Doctor:</label>
-                <input type="text" id="assigned-doctor" name="assigned_doctor" required>
+                <label for="patient-email">Patient Email:</label>
+                <input type="email" id="patient-email" name="patient_email" required>
             </div>
             <div class="form-group">
                 <button type="submit">Register</button>
+                <!-- Botón para regresar al index -->
+                <a href="index.php" class="btn">Return to Home</a>
             </div>
         </form>
-        <?php
-        if ($_SERVER["REQUEST_METHOD"] == "POST") {
-            // Database connection parameters
-            $servername = "localhost";
-            $username = "root";
-            $password = "";
-            $database = "hospitaldb";
-
-            // Create connection
-            $connection = new mysqli($servername, $username, $password, $database);
-
-            // Check connection
-            if ($connection->connect_error) {
-                die("Connection failed: " . $connection->connect_error);
-            }
-
-            // Sanitize input
-            $patient_id = htmlspecialchars($_POST['patient_id']);
-            $patient_name = htmlspecialchars($_POST['patient_name']);
-            $patient_dob = htmlspecialchars($_POST['patient_dob']);
-            $patient_phone = htmlspecialchars($_POST['patient_phone']);
-            $symptoms = htmlspecialchars($_POST['symptoms']);
-            $assigned_doctor = htmlspecialchars($_POST['assigned_doctor']);
-
-            // SQL to insert data
-            $sql = "INSERT INTO Patients (patient_id, patient_name, patient_dob, patient_phone, symptoms, assigned_doctor)
-                    VALUES ('$patient_id', '$patient_name', '$patient_dob', '$patient_phone', '$symptoms', '$assigned_doctor')";
-
-            if ($connection->query($sql) === TRUE) {
-                echo '<div class="alert alert-success" role="alert">Patient registered successfully!</div>';
-            } else {
-                echo '<div class="alert alert-danger" role="alert">Error: ' . $sql . "<br>" . $connection->error . '</div>';
-            }
-
-            $connection->close();
-        }
-        ?>
     </div>
-    <footer>
-        <p>&copy; 2024 Hospital Madero</p>
-    </footer>
 </body>
 </html>
+<?php
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $host = "localhost";
+    $user = "root";
+    $password = "";
+    $database = "medicalrecords";
+    $link = mysqli_connect($host, $user, $password, $database) or die("Error al conectar a la base de datos: " . mysqli_connect_error());
+
+    $patientName = $_POST['patient_name'];
+    $patientLastName = $_POST['patient_last_name'];
+    $patientAddress = $_POST['patient_address'];
+    $patientPhoneNumber = $_POST['patient_phone'];
+    $patientEmail = $_POST['patient_email'];
+
+    $query = "INSERT INTO Patients (PatientName, PatientLastName, PatientAddress, PatientPhoneNumber, PatientEmail) 
+              VALUES ('$patientName', '$patientLastName', '$patientAddress', '$patientPhoneNumber', '$patientEmail')";
+
+    if (mysqli_query($link, $query)) {
+        echo "Se ha guardado el registro: " . $patientName . " " . $patientLastName;
+    } else {
+        echo "Error al almacenar el registro: " . mysqli_error($link);
+    }
+
+    mysqli_close($link);
+}
+?>

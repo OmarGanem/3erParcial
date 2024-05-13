@@ -28,47 +28,61 @@
                 <label for="searchQuery" class="form-label">Enter Name:</label>
                 <input type="text" class="form-control" id="searchQuery" name="searchQuery" required>
             </div>
+            <div class="mb-3">
+                <label for="searchType" class="form-label">Search Type:</label>
+                <select class="form-control" id="searchType" name="searchType">
+                    <option value="patient">Patient</option>
+                    <option value="doctor">Doctor</option>
+                </select>
+            </div>
             <button type="submit" class="btn btn-primary">Search</button>
         </form>
         <?php
-        if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['searchQuery'])) {
-            $searchQuery = htmlspecialchars($_POST['searchQuery']); // Sanitize the user input to avoid SQL injection
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Database connection parameters
+    $host = "localhost";
+    $user = "root";
+    $password = "";
+    $db = "medicalrecords";
+    $link = mysqli_connect($host, $user, $password, $db) or die("Error connecting to the database: " . mysqli_connect_error());
 
-            // Database connection parameters
-            $servername = "localhost";
-            $username = "oganem";
-            $password = "";
-            $database = "hospitaldb";
+    // Check if both 'searchQuery' and 'searchType' are set
+    if (isset($_POST['searchQuery']) && isset($_POST['searchType'])) {
+        $searchQuery = mysqli_real_escape_string($link, $_POST['searchQuery']);
+        $searchType = $_POST['searchType'];
 
-            // Create connection
-            $connection = new mysqli($servername, $username, $password, $database);
-
-            // Check connection
-            if ($connection->connect_error) {
-                die("Connection failed: " . $connection->connect_error);
-            }
-
-            // Prepare a SELECT statement to prevent SQL injection
-            $stmt = $connection->prepare("SELECT Patient_Id, Patient_name, Date_of_birth, phone, Symptoms, Assigned_doctor FROM Patients WHERE Patient_name LIKE CONCAT('%', ?, '%')");
-            $stmt->bind_param("s", $searchQuery);
-            $stmt->execute();
-            $result = $stmt->get_result();
-
-            if ($result && $result->num_rows > 0) {
-                // Fetch the results
+        // Determine the query based on the search type
+        if ($searchType == "patient") {
+            $query = "SELECT * FROM patients WHERE PatientName LIKE CONCAT('%', ?, '%') OR PatientLastName LIKE CONCAT('%', ?, '%')";
+        } elseif ($searchType == "doctor") {
+            $query = "SELECT * FROM doctors WHERE DoctorName LIKE CONCAT('%', ?, '%') OR DoctorLastName LIKE CONCAT('%', ?, '%')";
+        }
+        
+        if (!empty($query)) {
+            $stmt = mysqli_prepare($link, $query);
+            // Bind the $searchQuery variable twice, once for each placeholder
+            mysqli_stmt_bind_param($stmt, "ss", $searchQuery, $searchQuery);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+        
+            if (mysqli_num_rows($result) > 0) {
                 echo '<div class="mt-4"><h4>Search Results:</h4><ul class="list-group">';
-                while($row = $result->fetch_assoc()) {
-                    echo '<li class="list-group-item">' . htmlspecialchars($row['Patient_name']) . ' - ' . htmlspecialchars($row['phone']) . '</li>';
+                while ($row = mysqli_fetch_assoc($result)) {
+                    echo '<li class="list-group-item">' . htmlspecialchars($row['DoctorName'] ?? $row['PatientName']) . ' ' . htmlspecialchars($row['DoctorLastName'] ?? $row['PatientLastName']) . '</li>';
                 }
                 echo '</ul></div>';
             } else {
                 echo '<div class="alert alert-info mt-3">No results found.</div>';
             }
-
-            $stmt->close();
-            $connection->close();
+        
+            mysqli_stmt_close($stmt);
+        } else {
+            echo '<div class="alert alert-warning mt-3">Please select a valid search type.</div>';
         }
-        ?>
+    }
+    mysqli_close($link);
+}
+?>
     </div>
 </body>
 </html>
